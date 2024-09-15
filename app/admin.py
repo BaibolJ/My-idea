@@ -33,6 +33,6 @@ class CustomUserAdmin(BaseUserAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Variety)
-admin.site.register(Product)
 admin.site.register(Order)
+admin.site.register(Objects)
 

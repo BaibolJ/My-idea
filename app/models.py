@@ -46,36 +46,54 @@ class CustomUser(AbstractBaseUser):
 # _____________________________________________________________
 
 
-class Variety(models.Model):
-    img = models.FileField(upload_to='media/img_variety')
-    title = models.CharField(max_length=100)
-    description = models.TextField()
+class Objects(models.Model):
+    name = models.CharField(max_length=300)
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
-class Product(models.Model):
+class Variety(models.Model):
     title = models.CharField(max_length=123)
-    img = models.FileField(upload_to='media/img_product')
-    price = models.PositiveIntegerField()
-    variety = models.ForeignKey(Variety, on_delete=models.CASCADE)
+    img = models.ImageField(upload_to='media/img_product')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_this = models.ForeignKey(Objects, on_delete=models.CASCADE)
+    description = models.TextField()
     stock = models.PositiveIntegerField()
 
     def __str__(self):
         return self.title
 
 
+# class Product(models.Model):
+#     title = models.CharField(max_length=123)
+#     img = models.FileField(upload_to='media/img_product')
+#     price = models.PositiveIntegerField()
+#     variety = models.ForeignKey(Variety, on_delete=models.CASCADE)
+#     stock = models.PositiveIntegerField()
+#
+#     def __str__(self):
+#         return self.title
+
+
 class Order(models.Model):
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='orders')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+    product = models.ForeignKey(Variety, on_delete=models.CASCADE)
+    kilogram = models.PositiveIntegerField(default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         # Рассчитываем общую стоимость заказа
-        self.total_price = self.product.price * self.quantity
+        self.total_price = self.product.price * self.kilogram
+
+        # Уменьшаем количество на складе
+        if self.product.stock >= self.kilogram:
+            self.product.stock -= self.kilogram
+            self.product.save()  # Сохраняем изменения в продукте
+        else:
+            raise ValueError("Недостаточно товара на складе")
+
         super().save(*args, **kwargs)
 
     def __str__(self):
